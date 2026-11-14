@@ -3,37 +3,394 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ABDOLLAH GAMER SITE BUILDER</title>
+<title>ABDOLLAH GAMER | سایت ساز</title>
+
 <style>
-body{margin:0;background:#0b1020;color:white;font-family:Tahoma;text-align:center}
-header{padding:50px 15px;background:#171f3b}
-h1{color:#a78bfa}
-button{padding:15px 25px;background:#805cff;color:white;border:0;border-radius:10px;font-size:16px}
-section{padding:30px}
-.card{background:#171f3b;padding:25px;margin:15px auto;border-radius:15px;max-width:500px}
-a{color:white;text-decoration:none}
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#0b1020;
+ color:white;
+ font-family:Tahoma,Arial;
+}
+header{
+ background:#151d35;
+ padding:18px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+}
+.logo{font-size:20px;font-weight:bold;color:#a78bfa}
+button{
+ border:0;
+ border-radius:9px;
+ padding:12px 16px;
+ background:#805cff;
+ color:white;
+ cursor:pointer;
+ margin:3px;
+}
+button:hover{opacity:.85}
+.layout{
+ display:grid;
+ grid-template-columns:300px 1fr;
+ min-height:calc(100vh - 70px);
+}
+aside{
+ background:#111a30;
+ padding:17px;
+ border-left:1px solid #293452;
+}
+main{padding:18px;min-width:0}
+.box{
+ background:#19233e;
+ padding:15px;
+ border-radius:12px;
+ margin-bottom:15px;
+}
+h3{color:#b5a0ff}
+label{
+ display:block;
+ margin:12px 0 7px;
+ font-size:13px;
+}
+input,textarea,select{
+ width:100%;
+ padding:11px;
+ background:#0b1224;
+ color:white;
+ border:1px solid #394563;
+ border-radius:8px;
+ font-family:Tahoma;
+}
+textarea{min-height:80px}
+.preview{
+ background:white;
+ min-height:550px;
+ border-radius:12px;
+ overflow:hidden;
+}
+iframe{
+ width:100%;
+ height:650px;
+ border:0;
+ background:white;
+}
+.template{
+ display:block;
+ width:100%;
+ text-align:right;
+ background:#263454;
+ margin:7px 0;
+}
+@media(max-width:750px){
+ .layout{grid-template-columns:1fr}
+ aside{border-left:0}
+ iframe{height:550px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">👑 ABDOLLAH GAMER</div>
+<div>
+<button onclick="saveProject()">ذخیره پروژه</button>
+<button onclick="downloadSite()">انتشار / دانلود سایت</button>
+</div>
+</header>
+
+<div class="layout">
+
+<aside>
+
+<div class="box">
+<h3>🎨 قالب سایت</h3>
+<button class="template" onclick="setTemplate('personal')">سایت شخصی</button>
+<button class="template" onclick="setTemplate('business')">سایت شرکتی</button>
+<button class="template" onclick="setTemplate('gaming')">سایت گیمینگ</button>
+<button class="template" onclick="setTemplate('simple')">سایت ساده</button>
+</div>
+
+<div class="box">
+<h3>✏️ ویرایش محتوا</h3>
+
+<label>نام سایت</label>
+<input id="title" value="به سایت من خوش آمدید">
+
+<label>توضیحات سایت</label>
+<textarea id="description">این سایت با سایت ساز عبدالله گیمر ساخته شده است.</textarea>
+
+<label>متن دکمه</label>
+<input id="buttonText" value="ورود به سایت">
+
+<label>لینک دکمه</label>
+<input id="buttonLink" value="https://example.com">
+
+<label>تصویر سایت</label>
+<input id="photo" type="file" accept="image/*">
+
+<label>رنگ پس‌زمینه</label>
+<input id="background" type="color" value="#10152b">
+
+<label>رنگ عنوان</label>
+<input id="headingColor" type="color" value="#a78bfa">
+
+</div>
+
+<div class="box">
+<h3>📄 مدیریت صفحه</h3>
+<button onclick="addSection()">افزودن بخش جدید</button>
+<button onclick="resetPage()">بازنشانی</button>
+</div>
+
+<div class="box">
+<h3>💾 پروژه</h3>
+<button onclick="saveProject()">ذخیره JSON</button>
+<button onclick="document.getElementById('loadFile').click()">بازکردن JSON</button>
+<input type="file" id="loadFile" accept=".json" hidden>
+</div>
+
+</aside>
+
+<main>
+
+<div class="box">
+<h3>پیش‌نمایش زنده سایت</h3>
+<small>تغییرات را در این قسمت مشاهده می‌کنی.</small>
+</div>
+
+<div class="preview">
+<iframe id="preview" sandbox="allow-popups"></iframe>
+</div>
+
+</main>
+</div>
+
+<script>
+
+let imageData="";
+let sections=[];
+
+const $=id=>document.getElementById(id);
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+  '&':'&amp;',
+  '<':'&lt;',
+  '>':'&gt;',
+  '"':'&quot;',
+  "'":'&#39;'
+ }[c]));
+}
+
+function safeURL(value){
+ try{
+  const url=new URL(value);
+  return ['http:','https:'].includes(url.protocol)?url.href:'#';
+ }catch(e){return '#'}
+}
+
+function makePage(){
+
+ const title=escapeHTML($('title').value);
+ const description=escapeHTML($('description').value);
+ const bg=$('background').value;
+ const color=$('headingColor').value;
+ const buttonText=escapeHTML($('buttonText').value);
+ const buttonLink=safeURL($('buttonLink').value);
+
+ return `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<style>
+body{
+ margin:0;
+ background:${bg};
+ color:white;
+ font-family:Tahoma;
+ text-align:center;
+}
+header{
+ padding:25px;
+ background:#171f35;
+}
+main{
+ max-width:900px;
+ margin:50px auto;
+ padding:25px;
+}
+h1{color:${color};font-size:35px}
+p{line-height:2}
+img{
+ max-width:100%;
+ max-height:350px;
+ border-radius:15px;
+}
+a{
+ display:inline-block;
+ background:${color};
+ color:white;
+ padding:14px 25px;
+ border-radius:10px;
+ text-decoration:none;
+ margin:15px;
+}
+.section{
+ padding:25px;
+ margin:20px auto;
+ background:#ffffff12;
+ border-radius:15px;
+}
 </style>
 </head>
 <body>
 <header>
-<h1>👑 ABDOLLAH GAMER</h1>
-<h2>سایت خودت را رایگان بساز!</h2>
-<p>بدون نیاز به برنامه‌نویسی</p>
-<a href="builder.html"><button>شروع ساخت سایت</button></a>
+<h2>${title}</h2>
 </header>
-<section>
-<div class="card">
-<h2>🎨 طراحی آسان</h2>
-<p>با چند کلیک سایت خودت را طراحی کن.</p>
-</div>
-<div class="card">
-<h2>🌐 انتشار سایت</h2>
-<p>برای سایتت آدرس اینترنتی انتخاب کن.</p>
-</div>
-<div class="card">
-<h2>💾 ذخیره پروژه</h2>
-<p>پروژه خودت را ذخیره و دوباره ویرایش کن.</p>
-</div>
-</section>
+<main>
+<h1>${title}</h1>
+${imageData?'<img src="'+imageData+'" alt="تصویر سایت">':''}
+<p>${description.replace(/\n/g,'<br>')}</p>
+${buttonText?'<a href="'+escapeHTML(buttonLink)+'">'+buttonText+'</a>':''}
+${sections.map(s=>'<div class="section"><h2>'+escapeHTML(s.title)+'</h2><p>'+escapeHTML(s.text)+'</p></div>').join('')}
+</main>
+<footer style="padding:20px">ساخته شده با سایت ساز عبدالله گیمر</footer>
+</body>
+</html>`;
+}
+
+function update(){
+ $('preview').srcdoc=makePage();
+}
+
+function setTemplate(type){
+
+ if(type==='gaming'){
+  $('title').value='دنیای گیمینگ';
+  $('description').value='به دنیای بازی ها خوش آمدید!';
+  $('background').value='#101020';
+  $('headingColor').value='#00e5ff';
+ }
+ else if(type==='business'){
+  $('title').value='شرکت من';
+  $('description').value='به وب سایت رسمی شرکت ما خوش آمدید.';
+  $('background').value='#14243a';
+  $('headingColor').value='#55c8ff';
+ }
+ else if(type==='personal'){
+  $('title').value='وب سایت شخصی من';
+  $('description').value='اینجا درباره من بیشتر بدانید.';
+  $('background').value='#211631';
+  $('headingColor').value='#d5a6ff';
+ }
+ else{
+  $('title').value='به سایت من خوش آمدید';
+  $('description').value='این یک سایت ساده است.';
+  $('background').value='#10152b';
+  $('headingColor').value='#a78bfa';
+ }
+ update();
+}
+
+function addSection(){
+ let title=prompt('عنوان بخش را وارد کن');
+ if(!title)return;
+ let text=prompt('توضیحات بخش را وارد کن')||'';
+ sections.push({title,text});
+ update();
+}
+
+function resetPage(){
+ if(!confirm('همه تغییرات بازنشانی شوند؟'))return;
+ sections=[];
+ imageData='';
+ $('photo').value='';
+ $('title').value='به سایت من خوش آمدید';
+ $('description').value='این سایت با سایت ساز عبدالله گیمر ساخته شده است.';
+ $('buttonText').value='ورود به سایت';
+ $('buttonLink').value='https://example.com';
+ $('background').value='#10152b';
+ $('headingColor').value='#a78bfa';
+ update();
+}
+
+function downloadSite(){
+ const blob=new Blob([makePage()],{type:'text/html;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download='my-website.html';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function saveProject(){
+ const data={
+ title:$('title').value,
+ description:$('description').value,
+ buttonText:$('buttonText').value,
+ buttonLink:$('buttonLink').value,
+ background:$('background').value,
+ headingColor:$('headingColor').value,
+ image:imageData,
+ sections
+ };
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download='project.json';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+$('loadFile').onchange=async e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  $('title').value=data.title||'';
+  $('description').value=data.description||'';
+  $('buttonText').value=data.buttonText||'';
+  $('buttonLink').value=data.buttonLink||'';
+  $('background').value=data.background||'#10152b';
+  $('headingColor').value=data.headingColor||'#a78bfa';
+  imageData=data.image||'';
+  sections=Array.isArray(data.sections)?data.sections:[];
+  update();
+  alert('پروژه باز شد');
+ }catch(err){
+  alert('فایل JSON معتبر نیست');
+ }
+ e.target.value='';
+};
+
+$('photo').onchange=e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ if(!file.type.startsWith('image/')||file.size>2*1024*1024){
+  alert('تصویر باید کمتر از ۲ مگابایت باشد');
+  return;
+ }
+ const reader=new FileReader();
+ reader.onload=()=>{
+  imageData=reader.result;
+  update();
+ };
+ reader.readAsDataURL(file);
+};
+
+['title','description','buttonText','buttonLink','background','headingColor']
+.forEach(id=>$(id).addEventListener('input',update));
+
+update();
+
+</script>
 </body>
 </html>
